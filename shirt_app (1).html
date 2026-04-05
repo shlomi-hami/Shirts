@@ -1,0 +1,697 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:system-ui,sans-serif;background:var(--color-background-tertiary,#f5f5f3);color:var(--color-text-primary,#1a1a1a);font-size:15px;padding:12px;min-height:100vh}
+h2{font-size:18px;font-weight:500;margin-bottom:16px}
+h3{font-size:15px;font-weight:500;margin-bottom:10px}
+.card{background:var(--color-background-primary,#fff);border:0.5px solid var(--color-border-tertiary,rgba(0,0,0,0.15));border-radius:12px;padding:16px;margin-bottom:12px}
+.tabs{display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap}
+.tab{padding:8px 16px;border-radius:8px;border:0.5px solid var(--color-border-secondary,rgba(0,0,0,0.3));background:transparent;cursor:pointer;font-size:14px;color:var(--color-text-secondary,#555)}
+.tab.active{background:var(--color-text-primary,#1a1a1a);color:var(--color-background-primary,#fff);border-color:transparent}
+.screen{display:none}.screen.active{display:block}
+.btn{padding:8px 16px;border-radius:8px;border:0.5px solid var(--color-border-secondary,rgba(0,0,0,0.3));background:transparent;cursor:pointer;font-size:14px;color:var(--color-text-primary,#1a1a1a)}
+.btn:hover{background:var(--color-background-secondary,#f0f0ee)}
+.btn.primary{background:var(--color-text-primary,#1a1a1a);color:var(--color-background-primary,#fff);border-color:transparent}
+.btn.primary:hover{opacity:0.85}
+.btn.danger{color:#a32d2d;border-color:#f09595}
+.btn.danger:hover{background:#fcebeb}
+.tag{display:inline-block;padding:3px 10px;border-radius:20px;font-size:12px;margin:2px}
+.tag.short{background:#e1f5ee;color:#085041}
+.tag.long{background:#e6f1fb;color:#0c447c}
+.tag.warm{background:#faeeda;color:#633806}
+.tag.fav{background:#fbeaf0;color:#72243e}
+input[type=text],input[type=date],input[type=number],select{width:100%;padding:8px 10px;border-radius:8px;border:0.5px solid var(--color-border-secondary,rgba(0,0,0,0.3));background:var(--color-background-primary,#fff);color:var(--color-text-primary,#1a1a1a);font-size:14px;margin-bottom:8px}
+input[type=checkbox]{width:16px;height:16px;cursor:pointer}
+.row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.shirt-item,.client-item{display:flex;align-items:flex-start;justify-content:space-between;padding:10px 0;border-bottom:0.5px solid var(--color-border-tertiary,rgba(0,0,0,0.1));gap:8px;flex-wrap:wrap}
+.shirt-item:last-child,.client-item:last-child{border-bottom:none}
+.muted{color:var(--color-text-secondary,#666);font-size:13px}
+.big-list{margin-top:8px;max-height:320px;overflow-y:auto}
+.check-item{display:flex;align-items:center;gap:10px;padding:8px 4px;border-bottom:0.5px solid var(--color-border-tertiary,rgba(0,0,0,0.1));cursor:pointer;border-radius:6px}
+.check-item:last-child{border-bottom:none}
+.check-item:hover{background:var(--color-background-secondary,#f5f5f3)}
+.result-shirt{display:flex;align-items:center;justify-content:space-between;padding:12px;border-radius:8px;margin-bottom:6px;border:0.5px solid var(--color-border-tertiary,rgba(0,0,0,0.15))}
+.result-shirt.safe-shirt{background:#eaf3de;border-color:#c0dd97}
+.result-shirt.blocked-shirt{background:#fcebeb;border-color:#f7c1c1;opacity:0.7}
+.empty{color:var(--color-text-secondary,#666);font-size:14px;text-align:center;padding:20px}
+label{font-size:14px;color:var(--color-text-secondary,#555);display:block;margin-bottom:4px}
+.filter-row{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+.filter-btn{padding:5px 12px;border-radius:20px;border:0.5px solid var(--color-border-secondary,rgba(0,0,0,0.3));background:transparent;cursor:pointer;font-size:13px;color:var(--color-text-secondary,#555)}
+.filter-btn.active{background:var(--color-text-primary,#1a1a1a);color:var(--color-background-primary,#fff);border-color:transparent}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th{text-align:right;padding:8px 6px;font-weight:500;color:var(--color-text-secondary,#666);border-bottom:1px solid var(--color-border-secondary,rgba(0,0,0,0.2))}
+td{padding:8px 6px;border-bottom:0.5px solid var(--color-border-tertiary,rgba(0,0,0,0.1))}
+</style>
+</head>
+<body>
+
+<div class="tabs">
+  <button class="tab active" onclick="showScreen('morning')">בוקר — מה ללבוש?</button>
+  <button class="tab" onclick="showScreen('log')">יומן יומי</button>
+  <button class="tab" onclick="showScreen('report')">דו"ח</button>
+  <button class="tab" onclick="showScreen('shirts')">חולצות</button>
+  <button class="tab" onclick="showScreen('clients')">לקוחות</button>
+</div>
+
+<!-- MORNING -->
+<div id="screen-morning" class="screen active">
+  <div class="card">
+    <h2>מי הלקוחות שלך מחר?</h2>
+    <div class="row" style="margin-bottom:10px;gap:8px">
+      <input type="text" id="client-search" placeholder="חיפוש לקוח..." oninput="renderMorning()" style="flex:1;margin-bottom:0">
+      <button class="btn" onclick="toggleNewClient()">+ לקוח חדש</button>
+    </div>
+    <div id="new-client-inline" style="display:none;background:var(--color-background-secondary,#f5f5f3);border-radius:8px;padding:12px;margin-bottom:10px">
+      <div class="row">
+        <input type="text" id="inline-client-name" placeholder="שם הלקוח" style="flex:1;margin-bottom:0">
+        <select id="inline-client-days" style="width:90px;margin-bottom:0">
+          <option value="90">90 יום</option>
+          <option value="60">60 יום</option>
+        </select>
+        <button class="btn primary" onclick="addClientInline()">הוסף</button>
+        <button class="btn" onclick="toggleNewClient()">ביטול</button>
+      </div>
+    </div>
+    <div class="filter-row">
+      <button class="filter-btn active" onclick="setTypeFilter('all',this)">כל הסוגים</button>
+      <button class="filter-btn" onclick="setTypeFilter('short',this)">קצרות</button>
+      <button class="filter-btn" onclick="setTypeFilter('long',this)">ארוכות</button>
+      <button class="filter-btn" onclick="setTypeFilter('warm',this)">ארוכות וחמות</button>
+    </div>
+    <div id="client-checklist" class="big-list"></div>
+    <div style="margin-top:14px">
+      <button class="btn primary" onclick="calcRecommendations()" style="width:100%">הצג חולצות מומלצות</button>
+    </div>
+  </div>
+  <div id="recommendations" style="display:none">
+    <div class="card">
+      <div class="row" style="justify-content:space-between;margin-bottom:10px">
+        <h3 style="margin:0">חולצות בטוחות ✓</h3>
+        <button class="btn" id="wa-btn" style="display:none;font-size:13px" onclick="shareToWhatsapp()">שלח לווטסאפ</button>
+      </div>
+      <div id="safe-shirts"></div>
+    </div>
+    <div class="card" id="blocked-card" style="display:none">
+      <h3>חולצות חסומות</h3>
+      <div id="blocked-shirts"></div>
+    </div>
+  </div>
+</div>
+
+<!-- LOG -->
+<div id="screen-log" class="screen">
+  <div class="card">
+    <h2>תיעוד יום</h2>
+    <label>תאריך</label>
+    <input type="date" id="log-date">
+    <label>חולצה שלבשת</label>
+    <select id="log-shirt"><option value="">-- בחר חולצה --</option></select>
+    <label style="margin-top:8px">לקוחות שנפגשת</label>
+    <div id="log-client-checklist" class="big-list" style="max-height:200px"></div>
+    <div style="margin-top:12px">
+      <button class="btn primary" onclick="saveLog()" style="width:100%">שמור יום</button>
+    </div>
+  </div>
+  <div class="card">
+    <h3>היסטוריה</h3>
+    <div id="history-list"></div>
+  </div>
+</div>
+
+<!-- REPORT -->
+<div id="screen-report" class="screen">
+  <div class="card">
+    <div class="row" style="justify-content:space-between;margin-bottom:16px">
+      <h2 style="margin:0">דו"ח 3 חודשים אחרונים</h2>
+      <button class="btn primary" onclick="downloadReport()">הורד CSV</button>
+    </div>
+    <div id="report-list"></div>
+  </div>
+</div>
+
+<!-- SHIRTS -->
+<div id="screen-shirts" class="screen">
+  <div class="card">
+    <h3>הוסף חולצה</h3>
+    <label>שם / תיאור</label>
+    <input type="text" id="shirt-name" placeholder="לבנה כפתורים">
+    <label>סוג</label>
+    <select id="shirt-type">
+      <option value="short">קצרה</option>
+      <option value="long">ארוכה</option>
+      <option value="warm">ארוכה וחמה</option>
+    </select>
+    <div class="row" style="margin-top:4px">
+      <input type="checkbox" id="shirt-fav">
+      <label for="shirt-fav" style="margin:0;cursor:pointer">חולצה מועדפת</label>
+    </div>
+    <button class="btn primary" onclick="addShirt()" style="margin-top:12px">הוסף</button>
+  </div>
+  <div class="card">
+    <h3>החולצות שלי</h3>
+    <div id="shirts-list"></div>
+  </div>
+</div>
+
+<!-- CLIENTS -->
+<div id="screen-clients" class="screen">
+  <div class="card">
+    <h3>הוסף לקוח</h3>
+    <label>שם לקוח</label>
+    <input type="text" id="client-name" placeholder="ישראל ישראלי">
+    <label>מרווח חסימה</label>
+    <select id="client-days">
+      <option value="90" selected>90 יום</option>
+      <option value="60">60 יום</option>
+    </select>
+    <button class="btn primary" onclick="addClient()" style="margin-top:4px">הוסף</button>
+  </div>
+  <div class="card">
+    <h3>הלקוחות שלי</h3>
+    <div id="clients-list"></div>
+  </div>
+</div>
+
+<script>
+var selectedClients = new Set();
+var logSelectedClients = new Set();
+var typeFilter = 'all';
+var safeSHIRTS = [];
+var DAYS_HE = ['ראשון','שני','שלישי','רביעי','חמישי','שישי','שבת'];
+
+var DEFAULT_SHIRTS = [
+  {id:'s1',name:'טומי ארוכה',type:'long',fav:false},
+  {id:'s2',name:'אמריקן איגל בורדו',type:'long',fav:true},
+  {id:'s3',name:'אמריקן איגל אפורה כהה',type:'long',fav:false},
+  {id:'s4',name:'אמריקן איגל פסים אפורה',type:'long',fav:false},
+  {id:'s5',name:'אמריקן איגל פסים עליונים',type:'long',fav:false},
+  {id:'s6',name:'אמריקן איגל שחורה ארוכה',type:'long',fav:false},
+  {id:'s7',name:'רנואר כחולה ארוכה',type:'long',fav:false},
+  {id:'s8',name:'רנואר סגולה ארוכה',type:'long',fav:false},
+  {id:'s9',name:'פול אנד בר שחורה / אפורה כהה ארוכה',type:'long',fav:true},
+  {id:'s10',name:'פול אנד בר אפור עם צווארון לבן ארוך',type:'long',fav:false},
+  {id:'s11',name:'סליז כהה ארוכה',type:'long',fav:false},
+  {id:'s12',name:'סליז פסים',type:'long',fav:false},
+  {id:'s13',name:'סליז כחולה ארוכה',type:'long',fav:false},
+  {id:'s14',name:'קסטרו כחולה כהה ארוכה עם צווארון אפור בהיר',type:'long',fav:false},
+  {id:'s15',name:'קסטרו צהובה ארוכה',type:'long',fav:false},
+  {id:'s16',name:'קסטרו אפורה ארוכה',type:'long',fav:false},
+  {id:'s17',name:'פולו לבנה ארוכה',type:'long',fav:false},
+  {id:'s18',name:'זארה לבנה ארוכה',type:'long',fav:false},
+  {id:'s19',name:'קאמל לבנה ארוכה',type:'long',fav:false},
+  {id:'s20',name:'חולצה אפורה כהה ארוכה',type:'long',fav:false},
+  {id:'s21',name:'שחורה אפורה כהה ארוכה',type:'long',fav:false},
+  {id:'s22',name:'GAP אפורה ארוכה',type:'long',fav:false},
+  {id:'s23',name:'PRIMEMARK תכלת ארוכה',type:'long',fav:false},
+  {id:'s24',name:'PRIMEMARK אפורה ארוכה',type:'long',fav:false},
+  {id:'s25',name:'אמריקן איגל אפור עבה',type:'warm',fav:false},
+  {id:'s26',name:'אמריקן איגל עבה שחורה',type:'warm',fav:true},
+  {id:'s27',name:'קסטרו אפורה עבה',type:'warm',fav:false},
+  {id:'s28',name:'לקוסט סגולה',type:'short',fav:false},
+  {id:'s29',name:'לקוסט צהובה',type:'short',fav:false},
+  {id:'s30',name:'לקוסט תכלת',type:'short',fav:false},
+  {id:'s31',name:'לקוסט ירוקה',type:'short',fav:false},
+  {id:'s32',name:'לקוסט אפורה',type:'short',fav:false},
+  {id:'s33',name:'לקוסט צהובה חדשה',type:'short',fav:false},
+  {id:'s34',name:'לקוסט תכלת חדשה',type:'short',fav:false},
+  {id:'s35',name:'לקוסט סגולה חדשה',type:'short',fav:false},
+  {id:'s36',name:'פולו כחולה',type:'short',fav:true},
+  {id:'s37',name:'פולו כחולה כהה',type:'short',fav:false},
+  {id:'s38',name:'פולו כחולה עם סוס לבן',type:'short',fav:false},
+  {id:'s39',name:'פולו לבנה',type:'short',fav:false},
+  {id:'s40',name:'פולו לבנה סוס חום',type:'short',fav:false},
+  {id:'s41',name:'פולו שחורה',type:'short',fav:false},
+  {id:'s42',name:'פולו תכלת',type:'short',fav:false},
+  {id:'s43',name:'פולו אפורה',type:'short',fav:false},
+  {id:'s44',name:'צרפת וורדה',type:'short',fav:false},
+  {id:'s45',name:'צרפת אדומה',type:'short',fav:false},
+  {id:'s46',name:'צרפת תכלת',type:'short',fav:false},
+  {id:'s47',name:'אמפוריו אפורה',type:'short',fav:true},
+  {id:'s48',name:'אמריקן איגל תכלת',type:'short',fav:false},
+  {id:'s49',name:'אמריקן איגל כחולה',type:'short',fav:false},
+  {id:'s50',name:'רנואר לבנה',type:'short',fav:false},
+  {id:'s51',name:'זארה לבנה קצרה',type:'short',fav:false}
+];
+
+var DEFAULT_CLIENT_NAMES = [
+  'אליה ב','שחר ב','אסנת ג','שלומי א','אורי ע','כנה א','משה צ','ירין','מיכל ל','עופרי ש',
+  'עדן א','ציפי י','עירית ד','שיר ד','אריה מ','רועי מ','רבקה ע','ענת א','לנה ז','יפית מ',
+  'לירן א','פנינה א','פנינה ז','חנה מ','אלי פ','מיכל ש','שחר מ','נדין ב','יעל ש','יעל ז',
+  'ליאור ק','יוני ט','שרה פ','נאוה ז','אלדד י','תמיר צ','ורד ש','אור צ','ירין ק','סביונית ס',
+  'אליה ש','בתאל ק','אבי מ','ששי פ','ישראל פ','פרדי ז','ליאורה ז','מרים ש','לאורה נ',
+  'רקפת ה','יגאל ה','גלינה מ','עופר מ','אור פ','ירין א','יפית'
+];
+
+var RAW_LOGS = [
+  {date:'2026-04-05',shirt:'פול אנד בר שחורה / אפורה כהה ארוכה',clients:['אסנת ג','שלומי א']},
+  {date:'2026-04-01',shirt:'אמריקן איגל בורדו',clients:['אורי ע','כנה א','שחר ב']},
+  {date:'2026-03-31',shirt:'אמריקן איגל פסים אפורה',clients:['משה צ','ירין','מיכל ל','עופרי ש']},
+  {date:'2026-03-29',shirt:'אמריקן איגל שחורה ארוכה',clients:['עדן א','ציפי י','אסנת ג','שחר ב']},
+  {date:'2026-03-26',shirt:'פולו לבנה ארוכה',clients:['אורי ע','עירית ד','שיר ד','אריה מ']},
+  {date:'2026-03-25',shirt:'פול אנד בר שחורה / אפורה כהה ארוכה',clients:['כנה א']},
+  {date:'2026-03-24',shirt:'אמריקן איגל פסים אפורה',clients:['רועי מ','רבקה ע','עדן א','שחר ב']},
+  {date:'2026-03-23',shirt:'אמריקן איגל בורדו',clients:['ירין']},
+  {date:'2026-03-22',shirt:'אמריקן איגל אפורה כהה',clients:['שלומי א','אסנת ג']},
+  {date:'2026-03-20',shirt:'PRIMEMARK אפורה ארוכה',clients:['ענת א','עדן א','שחר ב']},
+  {date:'2026-03-19',shirt:'פול אנד בר אפור עם צווארון לבן ארוך',clients:['לנה ז','עירית ד']},
+  {date:'2026-03-18',shirt:'אמריקן איגל שחורה ארוכה',clients:['כנה א','עופרי ש']},
+  {date:'2026-03-17',shirt:'טומי ארוכה',clients:['רבקה ע']},
+  {date:'2026-03-16',shirt:'פול אנד בר שחורה / אפורה כהה ארוכה',clients:['אליה ב','ירין','מיכל ל','אלי פ']},
+  {date:'2026-03-15',shirt:'אמריקן איגל בורדו',clients:['לירן א','אסנת ג','עדן א']},
+  {date:'2026-03-13',shirt:'אמריקן איגל פסים אפורה',clients:['שיר ד']},
+  {date:'2026-03-12',shirt:'אמריקן איגל שחורה ארוכה',clients:['רבקה ע','ירין א']},
+  {date:'2026-03-11',shirt:'אמריקן איגל אפורה כהה',clients:['כנה א']},
+  {date:'2026-03-10',shirt:'פול אנד בר אפור עם צווארון לבן ארוך',clients:['רועי מ']},
+  {date:'2026-03-09',shirt:'אמריקן איגל בורדו',clients:['רבקה ע','פנינה א']},
+  {date:'2026-03-05',shirt:'קאמל לבנה ארוכה',clients:['עירית ד','רבקה ע','יפית מ']},
+  {date:'2026-03-04',shirt:'אמריקן איגל בורדו',clients:['תמיר צ']},
+  {date:'2026-02-27',shirt:'רנואר כחולה ארוכה',clients:['יעל ז','ענת א','שיר ד']},
+  {date:'2026-02-26',shirt:'פולו לבנה ארוכה',clients:['יגאל ה','רבקה ע']},
+  {date:'2026-02-25',shirt:'טומי ארוכה',clients:['כנה א']},
+  {date:'2026-02-24',shirt:'קסטרו אפורה ארוכה',clients:['רועי מ','שרה פ','מרים ש','ירין א','נאוה ז']},
+  {date:'2026-02-23',shirt:'אמריקן איגל אפורה כהה',clients:['חנה מ','אלי פ','אליה ב','מיכל ל']},
+  {date:'2026-02-22',shirt:'PRIMEMARK תכלת ארוכה',clients:['שלומי א','ציפי י','אסנת ג','פנינה ז']},
+  {date:'2026-02-20',shirt:'פול אנד בר שחורה / אפורה כהה ארוכה',clients:['יעל ז','ענת א','שחר מ','עירית ד']},
+  {date:'2026-02-18',shirt:'אמריקן איגל פסים אפורה',clients:['כנה א','יפית מ','לאורה נ','שחר מ']},
+  {date:'2026-02-17',shirt:'פולו לבנה ארוכה',clients:['פרדי ז','ליאורה ז','עופרי ש','שרה פ','חנה מ','נאוה ז']},
+  {date:'2026-02-16',shirt:'לקוסט צהובה',clients:['פנינה ז','ירין','אלי פ','שחר מ']},
+  {date:'2026-02-15',shirt:'אמריקן איגל אפורה כהה',clients:['לירן א','נדין ב','יעל ש']},
+  {date:'2026-02-12',shirt:'אמריקן איגל שחורה ארוכה',clients:['שיר ד','יפית','אור צ']},
+  {date:'2026-02-11',shirt:'רנואר סגולה ארוכה',clients:['כנה א','ירין ק','סביונית ס','אליה ב']},
+  {date:'2026-02-10',shirt:'רנואר כחולה ארוכה',clients:['רועי מ','תמיר צ','שרה פ','מרים ש','נאוה ז']},
+  {date:'2026-02-09',shirt:'סליז פסים',clients:['פנינה ז','חנה מ','אלדד י']},
+  {date:'2026-02-08',shirt:'פולו כחולה',clients:['ציפי י','נדין ב','ורד ש']},
+  {date:'2026-02-06',shirt:'אמריקן איגל בורדו',clients:['יעל ז','ענת א','לנה ז']},
+  {date:'2026-02-05',shirt:'אמריקן איגל בורדו',clients:['עירית ד','ליאור ק']},
+  {date:'2026-02-04',shirt:'קסטרו אפורה ארוכה',clients:['כנה א','אלי פ']},
+  {date:'2026-02-03',shirt:'פול אנד בר שחורה / אפורה כהה ארוכה',clients:['יוני ט','שרה פ','נאוה ז','חנה מ','עופרי ש']},
+  {date:'2026-02-02',shirt:'אמריקן איגל פסים אפורה',clients:['אלדד י','פנינה א','תמיר צ','אליה ב']},
+  {date:'2026-02-01',shirt:'אמריקן איגל פסים עליונים',clients:['לירן א','ורד ש']},
+  {date:'2026-01-30',shirt:'אמריקן איגל בורדו',clients:['שיר ד']},
+  {date:'2026-01-29',shirt:'אמריקן איגל עבה שחורה',clients:['פנינה ז','מיכל ל','ישראל פ','עופר מ']},
+  {date:'2026-01-28',shirt:'קסטרו אפורה ארוכה',clients:['כנה א','אלי פ','לאורה נ']},
+  {date:'2026-01-27',shirt:'אמריקן איגל אפור עבה',clients:['רועי מ','חנה מ','נאוה ז','שרה פ']},
+  {date:'2026-01-26',shirt:'פול אנד בר שחורה / אפורה כהה ארוכה',clients:['פנינה ז','בתאל ק','תמיר צ','מיכל ש','אבי מ','אליה ש']},
+  {date:'2026-01-25',shirt:'טומי ארוכה',clients:['ציפי י','נדין ב','אסנת ג','ורד ש','ששי פ']},
+  {date:'2026-01-23',shirt:'אמריקן איגל אפורה כהה',clients:['ענת א','ששי פ']},
+  {date:'2026-01-22',shirt:'אמריקן איגל אפור עבה',clients:['פנינה ז','עירית ד','ישראל פ']},
+  {date:'2026-01-21',shirt:'פולו לבנה ארוכה',clients:['משה צ','כנה א','אלי פ','סביונית ס','לאורה נ']},
+  {date:'2026-01-20',shirt:'אמריקן איגל בורדו',clients:['פרדי ז','ליאורה ז','חנה מ','מרים ש','עופרי ש','שרה פ']},
+  {date:'2026-01-19',shirt:'טומי ארוכה',clients:['תמיר צ','רקפת ה','בתאל ק','מיכל ל','מיכל ש']},
+  {date:'2026-01-18',shirt:'קסטרו אפורה עבה',clients:['שלומי א','פנינה ז','נדין ב','ורד ש','נאוה ז']},
+  {date:'2026-01-16',shirt:'אמריקן איגל אפורה כהה',clients:['יעל ז','שיר ד','לנה ז']},
+  {date:'2026-01-15',shirt:'אמריקן איגל פסים אפורה',clients:['שרה פ','עירית ד','אלי פ','ישראל פ']},
+  {date:'2026-01-14',shirt:'אמריקן איגל אפור עבה',clients:['משה צ','כנה א','אלדד י','לאורה נ']},
+  {date:'2026-01-13',shirt:'קסטרו אפורה עבה',clients:['רועי מ','חנה מ']},
+  {date:'2026-01-12',shirt:'PRIMEMARK תכלת ארוכה',clients:['בתאל ק','רקפת ה','מיכל ל','תמיר צ','מיכל ש']},
+  {date:'2026-01-11',shirt:'אמריקן איגל עבה שחורה',clients:['ציפי י','נדין ב','יעל ש','ורד ש','אור פ']},
+  {date:'2026-01-09',shirt:'פול אנד בר אפור עם צווארון לבן ארוך',clients:['יעל ז','ענת א']},
+  {date:'2026-01-08',shirt:'טומי ארוכה',clients:['פנינה ז','עירית ד','אלי פ']},
+  {date:'2026-01-07',shirt:'אמריקן איגל בורדו',clients:['ישראל פ']},
+  {date:'2026-01-06',shirt:'אמריקן איגל שחורה ארוכה',clients:['עופרי ש','שרה פ','חנה מ','מרים ש','נאוה ז','תמיר צ','לאורה נ']},
+  {date:'2026-01-05',shirt:'רנואר סגולה ארוכה',clients:['גלינה מ','רבקה ע','רקפת ה','בתאל ק']}
+];
+
+function matchShirtId(name) {
+  var n = name.trim();
+  var s = DEFAULT_SHIRTS.find(function(x){return x.name===n;});
+  if(s) return s.id;
+  s = DEFAULT_SHIRTS.find(function(x){return n.includes(x.name)||x.name.includes(n);});
+  if(s) return s.id;
+  var words = n.split(' ');
+  s = DEFAULT_SHIRTS.find(function(x){return words.every(function(w){return x.name.includes(w);});});
+  return s ? s.id : null;
+}
+
+function matchClientId(name, clients) {
+  var n = name.trim();
+  var c = clients.find(function(x){return x.name===n;});
+  if(c) return c.id;
+  c = clients.find(function(x){return x.name.includes(n)||n.includes(x.name);});
+  return c ? c.id : null;
+}
+
+var stored = localStorage.getItem('shirtapp2');
+var data;
+if(stored) {
+  data = JSON.parse(stored);
+  if(!data.shirts||data.shirts.length===0) data.shirts = DEFAULT_SHIRTS.map(function(s){return Object.assign({},s);});
+} else {
+  data = {shirts: DEFAULT_SHIRTS.map(function(s){return Object.assign({},s);}), clients:[], logs:[]};
+}
+
+var existingNames = new Set(data.clients.map(function(c){return c.name;}));
+DEFAULT_CLIENT_NAMES.forEach(function(name){
+  if(!existingNames.has(name)){
+    data.clients.push({id:'c'+Date.now()+Math.random().toString(36).slice(2),name:name,days:90});
+    existingNames.add(name);
+  }
+});
+
+var existingDates = new Set(data.logs.map(function(l){return l.date;}));
+RAW_LOGS.forEach(function(r){
+  if(existingDates.has(r.date)) return;
+  var shirtId = matchShirtId(r.shirt);
+  if(!shirtId) return;
+  var clientIds = r.clients.map(function(n){return matchClientId(n,data.clients);}).filter(Boolean);
+  if(!clientIds.length) return;
+  data.logs.push({date:r.date,shirtId:shirtId,clients:clientIds});
+  existingDates.add(r.date);
+});
+
+save();
+
+function save(){localStorage.setItem('shirtapp2',JSON.stringify(data));}
+
+function showScreen(s){
+  document.querySelectorAll('.screen').forEach(function(el){el.classList.remove('active');});
+  document.querySelectorAll('.tab').forEach(function(el){el.classList.remove('active');});
+  document.getElementById('screen-'+s).classList.add('active');
+  var labels={morning:'בוקר',log:'יומן',report:'דו"ח',shirts:'חולצות',clients:'לקוחות'};
+  document.querySelectorAll('.tab').forEach(function(t){
+    if(t.textContent.trim().includes(labels[s])) t.classList.add('active');
+  });
+  if(s==='morning') renderMorning();
+  if(s==='log') renderLog();
+  if(s==='report') renderReport();
+  if(s==='shirts') renderShirts();
+  if(s==='clients') renderClients();
+}
+
+function typeLabel(t){return t==='short'?'קצרה':t==='long'?'ארוכה':'ארוכה וחמה';}
+function typeTag(t){return '<span class="tag '+t+'">'+typeLabel(t)+'</span>';}
+
+function isBlocked(shirtId, clientId){
+  var client = data.clients.find(function(c){return c.id===clientId;});
+  if(!client) return false;
+  var days = client.days||90;
+  var cutoff = Date.now() - days*24*60*60*1000;
+  return data.logs.some(function(l){
+    return new Date(l.date).getTime()>=cutoff && l.shirtId===shirtId && l.clients.includes(clientId);
+  });
+}
+
+function setTypeFilter(t,btn){
+  typeFilter=t;
+  document.querySelectorAll('.filter-btn').forEach(function(b){b.classList.remove('active');});
+  btn.classList.add('active');
+  document.getElementById('recommendations').style.display='none';
+}
+
+function toggleNewClient(){
+  var el=document.getElementById('new-client-inline');
+  el.style.display=el.style.display==='none'?'block':'none';
+  if(el.style.display==='block') document.getElementById('inline-client-name').focus();
+}
+
+function addClientInline(){
+  var name=document.getElementById('inline-client-name').value.trim();
+  var days=parseInt(document.getElementById('inline-client-days').value);
+  if(!name) return;
+  var id='c'+Date.now();
+  data.clients.push({id:id,name:name,days:days});
+  selectedClients.add(id);
+  save();
+  document.getElementById('inline-client-name').value='';
+  document.getElementById('new-client-inline').style.display='none';
+  document.getElementById('client-search').value='';
+  renderMorning();
+}
+
+function renderMorning(){
+  var q=(document.getElementById('client-search')||{}).value||'';
+  q=q.trim();
+  var el=document.getElementById('client-checklist');
+  if(!data.clients.length){el.innerHTML='<div class="empty">הוסף לקוחות בטאב לקוחות</div>';return;}
+  var list=q ? data.clients.filter(function(c){return c.name.includes(q);}) : data.clients;
+  if(!list.length){el.innerHTML='<div class="empty">לא נמצאו לקוחות</div>';return;}
+  el.innerHTML=list.map(function(c){
+    return '<div class="check-item" onclick="toggleClient(\''+c.id+'\',this)">'+
+      '<input type="checkbox" '+(selectedClients.has(c.id)?'checked':'')+' onclick="event.stopPropagation();toggleClient(\''+c.id+'\',this.closest(\'.check-item\'))">'+
+      '<span>'+c.name+'</span><span class="muted">'+c.days+' יום</span></div>';
+  }).join('');
+}
+
+function toggleClient(id,row){
+  var cb=row.querySelector('input[type=checkbox]');
+  if(selectedClients.has(id)){selectedClients.delete(id);if(cb)cb.checked=false;}
+  else{selectedClients.add(id);if(cb)cb.checked=true;}
+  document.getElementById('recommendations').style.display='none';
+}
+
+function calcRecommendations(){
+  var clients=[...selectedClients];
+  var shirts=data.shirts.filter(function(s){return typeFilter==='all'||s.type===typeFilter;});
+  var safe=[],blocked=[];
+  shirts.forEach(function(s){
+    var blockedBy=clients.filter(function(cid){return isBlocked(s.id,cid);});
+    if(blockedBy.length) blocked.push({shirt:s,blockedBy:blockedBy});
+    else safe.push(s);
+  });
+  safe.sort(function(a,b){return (b.fav?1:0)-(a.fav?1:0);});
+  safeSHIRTS=safe;
+  var safeEl=document.getElementById('safe-shirts');
+  var blockedEl=document.getElementById('blocked-shirts');
+  if(!safe.length) safeEl.innerHTML='<div class="empty">אין חולצות בטוחות בסינון הנוכחי</div>';
+  else {
+    safeEl.innerHTML=safe.map(function(s){
+      return '<div class="result-shirt safe-shirt"><div><span style="font-weight:500">'+s.name+'</span>'+(s.fav?' <span class="tag fav">מועדפת</span>':'')+'</div>'+typeTag(s.type)+'</div>';
+    }).join('');
+    document.getElementById('wa-btn').style.display='block';
+  }
+  if(!blocked.length){document.getElementById('blocked-card').style.display='none';}
+  else{
+    document.getElementById('blocked-card').style.display='block';
+    blockedEl.innerHTML=blocked.map(function(item){
+      var names=item.blockedBy.map(function(id){var c=data.clients.find(function(x){return x.id===id;});return c?c.name:'';}).join(', ');
+      return '<div class="result-shirt blocked-shirt"><div><span style="font-weight:500">'+item.shirt.name+'</span><div class="muted" style="font-size:12px;margin-top:2px">חסום: '+names+'</div></div>'+typeTag(item.shirt.type)+'</div>';
+    }).join('');
+  }
+  document.getElementById('recommendations').style.display='block';
+}
+
+function shareToWhatsapp(){
+  var tomorrow=new Date();
+  tomorrow.setDate(tomorrow.getDate()+1);
+  var d=tomorrow.getDate()+'/'+(tomorrow.getMonth()+1)+'/'+tomorrow.getFullYear();
+  var typeMap={short:'קצרה',long:'ארוכה',warm:'ארוכה וחמה'};
+  var lines=safeSHIRTS.map(function(s,i){return (i+1)+'. '+s.name+' ('+typeMap[s.type]+')'+(s.fav?' ⭐':'');}).join('\n');
+  var msg='חולצות בטוחות למחר '+d+':\n\n'+lines;
+  window.open('https://wa.me/?text='+encodeURIComponent(msg),'_blank');
+}
+
+function renderLog(){
+  var today=new Date().toISOString().split('T')[0];
+  document.getElementById('log-date').value=today;
+  var sel=document.getElementById('log-shirt');
+  sel.innerHTML='<option value="">-- בחר חולצה --</option>'+
+    data.shirts.map(function(s){return '<option value="'+s.id+'">'+s.name+' ('+typeLabel(s.type)+')</option>';}).join('');
+  var el=document.getElementById('log-client-checklist');
+  el.innerHTML=data.clients.map(function(c){
+    return '<div class="check-item" onclick="toggleLogClient(\''+c.id+'\',this)">'+
+      '<input type="checkbox" '+(logSelectedClients.has(c.id)?'checked':'')+' onclick="event.stopPropagation();toggleLogClient(\''+c.id+'\',this.closest(\'.check-item\'))">'+
+      '<span>'+c.name+'</span></div>';
+  }).join('');
+  renderHistory();
+}
+
+function toggleLogClient(id,row){
+  var cb=row.querySelector('input[type=checkbox]');
+  if(logSelectedClients.has(id)){logSelectedClients.delete(id);if(cb)cb.checked=false;}
+  else{logSelectedClients.add(id);if(cb)cb.checked=true;}
+}
+
+function saveLog(){
+  var date=document.getElementById('log-date').value;
+  var shirtId=document.getElementById('log-shirt').value;
+  var clients=[...logSelectedClients];
+  if(!date||!shirtId){alert('בחר תאריך וחולצה');return;}
+  if(!clients.length){alert('בחר לפחות לקוח אחד');return;}
+  data.logs=data.logs.filter(function(l){return l.date!==date;});
+  data.logs.push({date:date,shirtId:shirtId,clients:clients});
+  save();
+  logSelectedClients.clear();
+  renderLog();
+}
+
+function renderHistory(){
+  var el=document.getElementById('history-list');
+  var sorted=[...data.logs].sort(function(a,b){return b.date.localeCompare(a.date);}).slice(0,30);
+  if(!sorted.length){el.innerHTML='<div class="empty">אין תיעוד עדיין</div>';return;}
+  el.innerHTML=sorted.map(function(l){
+    var shirt=data.shirts.find(function(s){return s.id===l.shirtId;});
+    var clients=l.clients.map(function(id){var c=data.clients.find(function(x){return x.id===id;});return c?c.name:'';}).filter(Boolean).join(', ');
+    var d=new Date(l.date);
+    var ds=d.getDate()+'/'+(d.getMonth()+1)+'/'+d.getFullYear();
+    return '<div style="display:flex;justify-content:space-between;align-items:flex-start;padding:10px 0;border-bottom:0.5px solid var(--color-border-tertiary,rgba(0,0,0,0.1))">'+
+      '<div><div style="font-weight:500">'+(shirt?shirt.name:'?')+'</div><div class="muted">'+clients+'</div></div>'+
+      '<div class="muted">'+ds+'</div></div>';
+  }).join('');
+}
+
+function getReportLogs(){
+  var cutoff=Date.now()-90*24*60*60*1000;
+  return [...data.logs].filter(function(l){return new Date(l.date).getTime()>=cutoff;})
+    .sort(function(a,b){return b.date.localeCompare(a.date);});
+}
+
+function renderReport(){
+  var logs=getReportLogs();
+  var el=document.getElementById('report-list');
+  if(!logs.length){el.innerHTML='<div class="empty">אין נתונים ב-3 החודשים האחרונים</div>';return;}
+  el.innerHTML='<table><thead><tr>'+
+    '<th>תאריך</th><th>יום</th><th>חולצה</th><th>לקוחות</th>'+
+    '</tr></thead><tbody>'+
+    logs.map(function(l){
+      var d=new Date(l.date);
+      var ds=d.getDate()+'/'+(d.getMonth()+1)+'/'+d.getFullYear();
+      var dayName=DAYS_HE[d.getDay()];
+      var shirt=data.shirts.find(function(s){return s.id===l.shirtId;});
+      var clients=l.clients.map(function(id){var c=data.clients.find(function(x){return x.id===id;});return c?c.name:'';}).filter(Boolean).join(', ');
+      return '<tr><td>'+ds+'</td><td style="color:var(--color-text-secondary)">'+dayName+'</td>'+
+        '<td style="font-weight:500">'+(shirt?shirt.name:'?')+'</td>'+
+        '<td style="color:var(--color-text-secondary)">'+clients+'</td></tr>';
+    }).join('')+'</tbody></table>';
+}
+
+function downloadReport(){
+  var logs=getReportLogs();
+  var rows=[['תאריך','יום','חולצה','לקוחות']];
+  logs.forEach(function(l){
+    var d=new Date(l.date);
+    var ds=d.getDate()+'/'+(d.getMonth()+1)+'/'+d.getFullYear();
+    var shirt=data.shirts.find(function(s){return s.id===l.shirtId;});
+    var clients=l.clients.map(function(id){var c=data.clients.find(function(x){return x.id===id;});return c?c.name:'';}).filter(Boolean).join(' | ');
+    rows.push([ds,DAYS_HE[d.getDay()],shirt?shirt.name:'?',clients]);
+  });
+  var csv='\uFEFF'+rows.map(function(r){return r.map(function(v){return '"'+v+'"';}).join(',');}).join('\n');
+  var a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));
+  a.download='דוח_חולצות_'+new Date().toISOString().split('T')[0]+'.csv';
+  a.click();
+}
+
+function renderShirts(){
+  var el=document.getElementById('shirts-list');
+  if(!data.shirts.length){el.innerHTML='<div class="empty">אין חולצות עדיין</div>';return;}
+  el.innerHTML=data.shirts.map(function(s){
+    return '<div class="shirt-item">'+
+      '<div style="flex:1;min-width:0">'+
+        '<div id="sv-'+s.id+'" style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">'+
+          '<span style="font-weight:500">'+s.name+'</span>'+typeTag(s.type)+(s.fav?'<span class="tag fav">מועדפת</span>':'')+
+        '</div>'+
+        '<div id="se-'+s.id+'" style="display:none;margin-top:6px">'+
+          '<input type="text" value="'+s.name+'" id="si-'+s.id+'" style="margin-bottom:6px">'+
+          '<div class="row">'+
+            '<select id="st-'+s.id+'" style="flex:1;margin-bottom:0">'+
+              '<option value="short" '+(s.type==='short'?'selected':'')+'>קצרה</option>'+
+              '<option value="long" '+(s.type==='long'?'selected':'')+'>ארוכה</option>'+
+              '<option value="warm" '+(s.type==='warm'?'selected':'')+'>ארוכה וחמה</option>'+
+            '</select>'+
+            '<button class="btn primary" onclick="saveShirtEdit(\''+s.id+'\')">שמור</button>'+
+            '<button class="btn" onclick="cancelShirtEdit(\''+s.id+'\')">ביטול</button>'+
+          '</div>'+
+        '</div>'+
+      '</div>'+
+      '<div class="row" style="flex-shrink:0">'+
+        '<button class="btn" onclick="toggleFav(\''+s.id+'\')">'+(s.fav?'הסר מועדפת':'מועדפת')+'</button>'+
+        '<button class="btn" onclick="startShirtEdit(\''+s.id+'\')">עריכה</button>'+
+        '<button class="btn danger" onclick="deleteShirt(\''+s.id+'\')">מחק</button>'+
+      '</div>'+
+    '</div>';
+  }).join('');
+}
+
+function startShirtEdit(id){document.getElementById('sv-'+id).style.display='none';document.getElementById('se-'+id).style.display='block';}
+function cancelShirtEdit(id){document.getElementById('sv-'+id).style.display='flex';document.getElementById('se-'+id).style.display='none';}
+function saveShirtEdit(id){
+  var s=data.shirts.find(function(x){return x.id===id;});
+  if(!s) return;
+  var v=document.getElementById('si-'+id).value.trim();
+  if(v) s.name=v;
+  s.type=document.getElementById('st-'+id).value;
+  save();renderShirts();
+}
+function toggleFav(id){
+  var s=data.shirts.find(function(x){return x.id===id;});
+  if(s){s.fav=!s.fav;save();renderShirts();}
+}
+function addShirt(){
+  var name=document.getElementById('shirt-name').value.trim();
+  var type=document.getElementById('shirt-type').value;
+  var fav=document.getElementById('shirt-fav').checked;
+  if(!name) return;
+  data.shirts.push({id:'s'+Date.now(),name:name,type:type,fav:fav});
+  save();
+  document.getElementById('shirt-name').value='';
+  document.getElementById('shirt-fav').checked=false;
+  renderShirts();
+}
+function deleteShirt(id){
+  data.shirts=data.shirts.filter(function(s){return s.id!==id;});
+  data.logs=data.logs.filter(function(l){return l.shirtId!==id;});
+  save();renderShirts();
+}
+
+function renderClients(){
+  var el=document.getElementById('clients-list');
+  if(!data.clients.length){el.innerHTML='<div class="empty">אין לקוחות עדיין</div>';return;}
+  el.innerHTML=data.clients.map(function(c){
+    return '<div class="client-item">'+
+      '<div style="flex:1;min-width:0">'+
+        '<div id="cv-'+c.id+'" style="display:flex;align-items:center;gap:6px">'+
+          '<span style="font-weight:500">'+c.name+'</span><span class="muted">'+c.days+' יום</span>'+
+        '</div>'+
+        '<div id="ce-'+c.id+'" style="display:none;margin-top:6px">'+
+          '<input type="text" value="'+c.name+'" id="ci-'+c.id+'" style="margin-bottom:6px">'+
+          '<div class="row">'+
+            '<button class="btn primary" onclick="saveClientEdit(\''+c.id+'\')">שמור</button>'+
+            '<button class="btn" onclick="cancelClientEdit(\''+c.id+'\')">ביטול</button>'+
+          '</div>'+
+        '</div>'+
+      '</div>'+
+      '<div class="row" style="flex-shrink:0">'+
+        '<button class="btn" onclick="toggleDays(\''+c.id+'\')">'+(c.days===90?'60 יום':'90 יום')+'</button>'+
+        '<button class="btn" onclick="startClientEdit(\''+c.id+'\')">עריכה</button>'+
+        '<button class="btn danger" onclick="deleteClient(\''+c.id+'\')">מחק</button>'+
+      '</div>'+
+    '</div>';
+  }).join('');
+}
+
+function startClientEdit(id){document.getElementById('cv-'+id).style.display='none';document.getElementById('ce-'+id).style.display='block';}
+function cancelClientEdit(id){document.getElementById('cv-'+id).style.display='flex';document.getElementById('ce-'+id).style.display='none';}
+function saveClientEdit(id){
+  var c=data.clients.find(function(x){return x.id===id;});
+  if(!c) return;
+  var v=document.getElementById('ci-'+id).value.trim();
+  if(v) c.name=v;
+  save();renderClients();
+}
+function addClient(){
+  var name=document.getElementById('client-name').value.trim();
+  var days=parseInt(document.getElementById('client-days').value);
+  if(!name) return;
+  data.clients.push({id:'c'+Date.now(),name:name,days:days});
+  save();
+  document.getElementById('client-name').value='';
+  renderClients();
+}
+function toggleDays(id){
+  var c=data.clients.find(function(x){return x.id===id;});
+  if(c){c.days=c.days===90?60:90;save();renderClients();}
+}
+function deleteClient(id){
+  data.clients=data.clients.filter(function(c){return c.id!==id;});
+  data.logs=data.logs.map(function(l){return {date:l.date,shirtId:l.shirtId,clients:l.clients.filter(function(cid){return cid!==id;})};});
+  save();renderClients();
+}
+
+renderMorning();
+</script>
+</body>
+</html>
