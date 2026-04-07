@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="he" dir="rtl">
 <head>
@@ -24,6 +25,7 @@ h3{font-size:15px;font-weight:500;margin-bottom:10px}
 .tag.long{background:#e6f1fb;color:#0c447c}
 .tag.warm{background:#faeeda;color:#633806}
 .tag.fav{background:#fbeaf0;color:#72243e}
+.tag.saved{background:#e1f5ee;color:#085041;font-size:11px;padding:2px 7px}
 input[type=text],input[type=date],input[type=number],select{width:100%;padding:8px 10px;border-radius:8px;border:0.5px solid var(--color-border-secondary,rgba(0,0,0,0.3));background:var(--color-background-primary,#fff);color:var(--color-text-primary,#1a1a1a);font-size:14px;margin-bottom:8px}
 input[type=checkbox]{width:16px;height:16px;cursor:pointer}
 .row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
@@ -45,6 +47,12 @@ label{font-size:14px;color:var(--color-text-secondary,#555);display:block;margin
 table{width:100%;border-collapse:collapse;font-size:14px}
 th{text-align:right;padding:8px 6px;font-weight:500;color:var(--color-text-secondary,#666);border-bottom:1px solid var(--color-border-secondary,rgba(0,0,0,0.2))}
 td{padding:8px 6px;border-bottom:0.5px solid var(--color-border-tertiary,rgba(0,0,0,0.1))}
+.retro-box{background:#faeeda;border:0.5px solid #fac775;border-radius:12px;padding:16px;margin-bottom:12px}
+.retro-box label{color:#633806}
+.success-msg{background:#e1f5ee;border-radius:8px;padding:10px 14px;font-size:14px;color:#085041;margin-top:8px}
+.search-wrap{position:relative;margin-bottom:8px}
+.search-wrap input{padding-right:32px;margin-bottom:0}
+.search-wrap::before{content:"🔍";position:absolute;left:10px;top:50%;transform:translateY(-50%);font-size:13px;pointer-events:none}
 </style>
 </head>
 <body>
@@ -52,6 +60,7 @@ td{padding:8px 6px;border-bottom:0.5px solid var(--color-border-tertiary,rgba(0,
 <div class="tabs">
   <button class="tab active" onclick="showScreen('morning')">בוקר — מה ללבוש?</button>
   <button class="tab" onclick="showScreen('log')">יומן יומי</button>
+  <button class="tab" onclick="showScreen('retro')">הוספה בדיעבד</button>
   <button class="tab" onclick="showScreen('report')">דו"ח</button>
   <button class="tab" onclick="showScreen('shirts')">חולצות</button>
   <button class="tab" onclick="showScreen('clients')">לקוחות</button>
@@ -76,12 +85,13 @@ td{padding:8px 6px;border-bottom:0.5px solid var(--color-border-tertiary,rgba(0,
         <button class="btn" onclick="toggleNewClient()">ביטול</button>
       </div>
     </div>
+    <div style="font-size:13px;color:var(--color-text-secondary,#888);margin-bottom:6px">בחר סוג חולצה (1 או 2 סמוכים):</div>
     <div class="filter-row">
-      <button class="filter-btn active" onclick="setTypeFilter('all',this)">כל הסוגים</button>
-      <button class="filter-btn" onclick="setTypeFilter('short',this)">קצרות</button>
-      <button class="filter-btn" onclick="setTypeFilter('long',this)">ארוכות</button>
-      <button class="filter-btn" onclick="setTypeFilter('warm',this)">ארוכות וחמות</button>
+      <button class="filter-btn" id="ft-short" onclick="toggleTypeFilter('short')">קצרות</button>
+      <button class="filter-btn" id="ft-long" onclick="toggleTypeFilter('long')">ארוכות</button>
+      <button class="filter-btn" id="ft-warm" onclick="toggleTypeFilter('warm')">ארוכות וחמות</button>
     </div>
+    <div id="filter-warning" style="display:none;font-size:12px;color:#a32d2d;margin-bottom:8px"></div>
     <div id="client-checklist" class="big-list"></div>
     <div style="margin-top:14px">
       <button class="btn primary" onclick="calcRecommendations()" style="width:100%">הצג חולצות מומלצות</button>
@@ -111,6 +121,9 @@ td{padding:8px 6px;border-bottom:0.5px solid var(--color-border-tertiary,rgba(0,
     <label>חולצה שלבשת</label>
     <select id="log-shirt"><option value="">-- בחר חולצה --</option></select>
     <label style="margin-top:8px">לקוחות שנפגשת</label>
+    <div class="search-wrap">
+      <input type="text" id="log-client-search" placeholder="חיפוש לקוח..." oninput="renderLogClients()">
+    </div>
     <div id="log-client-checklist" class="big-list" style="max-height:200px"></div>
     <div style="margin-top:12px">
       <button class="btn primary" onclick="saveLog()" style="width:100%">שמור יום</button>
@@ -119,6 +132,27 @@ td{padding:8px 6px;border-bottom:0.5px solid var(--color-border-tertiary,rgba(0,
   <div class="card">
     <h3>היסטוריה</h3>
     <div id="history-list"></div>
+  </div>
+</div>
+
+<!-- RETRO -->
+<div id="screen-retro" class="screen">
+  <div class="retro-box">
+    <h2 style="margin-bottom:6px">הוספה בדיעבד</h2>
+    <p style="font-size:13px;color:#633806;margin-bottom:14px">פספסת לתעד יום? בחר תאריך בעבר והשלם את הרשומה.</p>
+    <label>תאריך (בעבר)</label>
+    <input type="date" id="retro-date">
+    <label>חולצה שלבשת</label>
+    <select id="retro-shirt"><option value="">-- בחר חולצה --</option></select>
+    <label style="margin-top:8px">לקוחות שנפגשת</label>
+    <div class="search-wrap">
+      <input type="text" id="retro-client-search" placeholder="חיפוש לקוח..." oninput="renderRetroClients()">
+    </div>
+    <div id="retro-client-checklist" class="big-list" style="max-height:220px"></div>
+    <div style="margin-top:12px">
+      <button class="btn primary" onclick="saveRetro()" style="width:100%">שמור רשומה</button>
+    </div>
+    <div id="retro-msg"></div>
   </div>
 </div>
 
@@ -171,6 +205,16 @@ td{padding:8px 6px;border-bottom:0.5px solid var(--color-border-tertiary,rgba(0,
     <button class="btn primary" onclick="addClient()" style="margin-top:4px">הוסף</button>
   </div>
   <div class="card">
+    <h3>איחוד לקוחות</h3>
+    <p style="font-size:13px;color:var(--color-text-secondary,#888);margin-bottom:12px">בחר לקוח ראשי ולקוח כפול — כל ההיסטוריה של הכפול תועבר לראשי ויימחק.</p>
+    <label>לקוח ראשי (השם שישאר)</label>
+    <select id="merge-primary"></select>
+    <label>לקוח כפול (יימחק)</label>
+    <select id="merge-duplicate"></select>
+    <div id="merge-warning" style="display:none;font-size:13px;color:#a32d2d;margin-bottom:8px"></div>
+    <button class="btn danger" onclick="mergeClients()" style="margin-top:4px">איחד לקוחות</button>
+  </div>
+  <div class="card">
     <h3>הלקוחות שלי</h3>
     <div id="clients-list"></div>
   </div>
@@ -179,7 +223,8 @@ td{padding:8px 6px;border-bottom:0.5px solid var(--color-border-tertiary,rgba(0,
 <script>
 var selectedClients = new Set();
 var logSelectedClients = new Set();
-var typeFilter = 'all';
+var retroSelectedClients = new Set();
+var selectedTypes = new Set();
 var safeSHIRTS = [];
 var DAYS_HE = ['ראשון','שני','שלישי','רביעי','חמישי','שישי','שבת'];
 
@@ -316,49 +361,29 @@ var RAW_LOGS = [
   {date:'2026-01-05',shirt:'רנואר סגולה ארוכה',clients:['גלינה מ','רבקה ע','רקפת ה','בתאל ק']}
 ];
 
-function matchShirtId(name) {
-  var n = name.trim();
-  var s = DEFAULT_SHIRTS.find(function(x){return x.name===n;});
-  if(s) return s.id;
-  s = DEFAULT_SHIRTS.find(function(x){return n.includes(x.name)||x.name.includes(n);});
-  if(s) return s.id;
-  var words = n.split(' ');
-  s = DEFAULT_SHIRTS.find(function(x){return words.every(function(w){return x.name.includes(w);});});
-  return s ? s.id : null;
-}
+function matchShirtId(name){var n=name.trim();var s=DEFAULT_SHIRTS.find(function(x){return x.name===n;});if(s)return s.id;s=DEFAULT_SHIRTS.find(function(x){return n.includes(x.name)||x.name.includes(n);});if(s)return s.id;var words=n.split(' ');s=DEFAULT_SHIRTS.find(function(x){return words.every(function(w){return x.name.includes(w);});});return s?s.id:null;}
+function matchClientId(name,clients){var n=name.trim();var c=clients.find(function(x){return x.name===n;});if(c)return c.id;c=clients.find(function(x){return x.name.includes(n)||n.includes(x.name);});return c?c.id:null;}
 
-function matchClientId(name, clients) {
-  var n = name.trim();
-  var c = clients.find(function(x){return x.name===n;});
-  if(c) return c.id;
-  c = clients.find(function(x){return x.name.includes(n)||n.includes(x.name);});
-  return c ? c.id : null;
-}
-
-var stored = localStorage.getItem('shirtapp2');
+var stored=localStorage.getItem('shirtapp2');
 var data;
-if(stored) {
-  data = JSON.parse(stored);
-  if(!data.shirts||data.shirts.length===0) data.shirts = DEFAULT_SHIRTS.map(function(s){return Object.assign({},s);});
-} else {
-  data = {shirts: DEFAULT_SHIRTS.map(function(s){return Object.assign({},s);}), clients:[], logs:[]};
+if(stored){
+  data=JSON.parse(stored);
+  if(!data.shirts||data.shirts.length===0) data.shirts=DEFAULT_SHIRTS.map(function(s){return Object.assign({},s);});
+}else{
+  data={shirts:DEFAULT_SHIRTS.map(function(s){return Object.assign({},s);}),clients:[],logs:[]};
 }
 
-var existingNames = new Set(data.clients.map(function(c){return c.name;}));
+var existingNames=new Set(data.clients.map(function(c){return c.name;}));
 DEFAULT_CLIENT_NAMES.forEach(function(name){
-  if(!existingNames.has(name)){
-    data.clients.push({id:'c'+Date.now()+Math.random().toString(36).slice(2),name:name,days:90});
-    existingNames.add(name);
-  }
+  if(!existingNames.has(name)){data.clients.push({id:'c'+Date.now()+Math.random().toString(36).slice(2),name:name,days:90});existingNames.add(name);}
 });
 
-var existingDates = new Set(data.logs.map(function(l){return l.date;}));
+var existingDates=new Set(data.logs.map(function(l){return l.date;}));
 RAW_LOGS.forEach(function(r){
-  if(existingDates.has(r.date)) return;
-  var shirtId = matchShirtId(r.shirt);
-  if(!shirtId) return;
-  var clientIds = r.clients.map(function(n){return matchClientId(n,data.clients);}).filter(Boolean);
-  if(!clientIds.length) return;
+  if(existingDates.has(r.date))return;
+  var shirtId=matchShirtId(r.shirt);if(!shirtId)return;
+  var clientIds=r.clients.map(function(n){return matchClientId(n,data.clients);}).filter(Boolean);
+  if(!clientIds.length)return;
   data.logs.push({date:r.date,shirtId:shirtId,clients:clientIds});
   existingDates.add(r.date);
 });
@@ -371,34 +396,56 @@ function showScreen(s){
   document.querySelectorAll('.screen').forEach(function(el){el.classList.remove('active');});
   document.querySelectorAll('.tab').forEach(function(el){el.classList.remove('active');});
   document.getElementById('screen-'+s).classList.add('active');
-  var labels={morning:'בוקר',log:'יומן',report:'דו"ח',shirts:'חולצות',clients:'לקוחות'};
+  var labels={morning:'בוקר',log:'יומן',retro:'הוספה',report:'דו"ח',shirts:'חולצות',clients:'לקוחות'};
   document.querySelectorAll('.tab').forEach(function(t){
     if(t.textContent.trim().includes(labels[s])) t.classList.add('active');
   });
   if(s==='morning') renderMorning();
   if(s==='log') renderLog();
+  if(s==='retro') renderRetro();
   if(s==='report') renderReport();
   if(s==='shirts') renderShirts();
-  if(s==='clients') renderClients();
+  if(s==='clients'){renderClients();renderMergeSelects();}
 }
 
 function typeLabel(t){return t==='short'?'קצרה':t==='long'?'ארוכה':'ארוכה וחמה';}
 function typeTag(t){return '<span class="tag '+t+'">'+typeLabel(t)+'</span>';}
 
-function isBlocked(shirtId, clientId){
-  var client = data.clients.find(function(c){return c.id===clientId;});
-  if(!client) return false;
-  var days = client.days||90;
-  var cutoff = Date.now() - days*24*60*60*1000;
-  return data.logs.some(function(l){
-    return new Date(l.date).getTime()>=cutoff && l.shirtId===shirtId && l.clients.includes(clientId);
-  });
+function isBlocked(shirtId,clientId){
+  var client=data.clients.find(function(c){return c.id===clientId;});
+  if(!client)return false;
+  var days=client.days||90;
+  var cutoff=Date.now()-days*24*60*60*1000;
+  return data.logs.some(function(l){return new Date(l.date).getTime()>=cutoff&&l.shirtId===shirtId&&l.clients.includes(clientId);});
 }
 
-function setTypeFilter(t,btn){
-  typeFilter=t;
-  document.querySelectorAll('.filter-btn').forEach(function(b){b.classList.remove('active');});
-  btn.classList.add('active');
+function toggleTypeFilter(t){
+  var ADJACENT = {short:['short','long'], long:['short','long','warm'], warm:['long','warm']};
+  if(selectedTypes.has(t)){
+    selectedTypes.delete(t);
+  } else {
+    if(selectedTypes.size>=2){
+      document.getElementById('filter-warning').textContent='ניתן לבחור עד 2 קטגוריות סמוכות';
+      document.getElementById('filter-warning').style.display='block';
+      setTimeout(function(){document.getElementById('filter-warning').style.display='none';},2500);
+      return;
+    }
+    if(selectedTypes.size===1){
+      var existing=[...selectedTypes][0];
+      if(!ADJACENT[t].includes(existing)){
+        document.getElementById('filter-warning').textContent='לא ניתן לבחור קצרות + ארוכות וחמות יחד';
+        document.getElementById('filter-warning').style.display='block';
+        setTimeout(function(){document.getElementById('filter-warning').style.display='none';},2500);
+        return;
+      }
+    }
+    selectedTypes.add(t);
+  }
+  document.getElementById('filter-warning').style.display='none';
+  ['short','long','warm'].forEach(function(x){
+    var btn=document.getElementById('ft-'+x);
+    if(btn) btn.classList.toggle('active', selectedTypes.has(x));
+  });
   document.getElementById('recommendations').style.display='none';
 }
 
@@ -411,7 +458,7 @@ function toggleNewClient(){
 function addClientInline(){
   var name=document.getElementById('inline-client-name').value.trim();
   var days=parseInt(document.getElementById('inline-client-days').value);
-  if(!name) return;
+  if(!name)return;
   var id='c'+Date.now();
   data.clients.push({id:id,name:name,days:days});
   selectedClients.add(id);
@@ -427,7 +474,7 @@ function renderMorning(){
   q=q.trim();
   var el=document.getElementById('client-checklist');
   if(!data.clients.length){el.innerHTML='<div class="empty">הוסף לקוחות בטאב לקוחות</div>';return;}
-  var list=q ? data.clients.filter(function(c){return c.name.includes(q);}) : data.clients;
+  var list=q?data.clients.filter(function(c){return c.name.includes(q);}):data.clients;
   if(!list.length){el.innerHTML='<div class="empty">לא נמצאו לקוחות</div>';return;}
   el.innerHTML=list.map(function(c){
     return '<div class="check-item" onclick="toggleClient(\''+c.id+'\',this)">'+
@@ -444,8 +491,9 @@ function toggleClient(id,row){
 }
 
 function calcRecommendations(){
+  if(!selectedTypes.size){alert('בחר סוג חולצה לפני חישוב');return;}
   var clients=[...selectedClients];
-  var shirts=data.shirts.filter(function(s){return typeFilter==='all'||s.type===typeFilter;});
+  var shirts=data.shirts.filter(function(s){return selectedTypes.has(s.type);});
   var safe=[],blocked=[];
   shirts.forEach(function(s){
     var blockedBy=clients.filter(function(cid){return isBlocked(s.id,cid);});
@@ -457,7 +505,7 @@ function calcRecommendations(){
   var safeEl=document.getElementById('safe-shirts');
   var blockedEl=document.getElementById('blocked-shirts');
   if(!safe.length) safeEl.innerHTML='<div class="empty">אין חולצות בטוחות בסינון הנוכחי</div>';
-  else {
+  else{
     safeEl.innerHTML=safe.map(function(s){
       return '<div class="result-shirt safe-shirt"><div><span style="font-weight:500">'+s.name+'</span>'+(s.fav?' <span class="tag fav">מועדפת</span>':'')+'</div>'+typeTag(s.type)+'</div>';
     }).join('');
@@ -475,8 +523,7 @@ function calcRecommendations(){
 }
 
 function shareToWhatsapp(){
-  var tomorrow=new Date();
-  tomorrow.setDate(tomorrow.getDate()+1);
+  var tomorrow=new Date();tomorrow.setDate(tomorrow.getDate()+1);
   var d=tomorrow.getDate()+'/'+(tomorrow.getMonth()+1)+'/'+tomorrow.getFullYear();
   var typeMap={short:'קצרה',long:'ארוכה',warm:'ארוכה וחמה'};
   var lines=safeSHIRTS.map(function(s,i){return (i+1)+'. '+s.name+' ('+typeMap[s.type]+')'+(s.fav?' ⭐':'');}).join('\n');
@@ -484,19 +531,27 @@ function shareToWhatsapp(){
   window.open('https://wa.me/?text='+encodeURIComponent(msg),'_blank');
 }
 
+/* ---- LOG ---- */
 function renderLog(){
   var today=new Date().toISOString().split('T')[0];
   document.getElementById('log-date').value=today;
   var sel=document.getElementById('log-shirt');
   sel.innerHTML='<option value="">-- בחר חולצה --</option>'+
     data.shirts.map(function(s){return '<option value="'+s.id+'">'+s.name+' ('+typeLabel(s.type)+')</option>';}).join('');
+  renderLogClients();
+  renderHistory();
+}
+
+function renderLogClients(){
+  var q=(document.getElementById('log-client-search')||{}).value||'';
+  q=q.trim();
   var el=document.getElementById('log-client-checklist');
-  el.innerHTML=data.clients.map(function(c){
+  var list=q?data.clients.filter(function(c){return c.name.includes(q);}):data.clients;
+  el.innerHTML=list.map(function(c){
     return '<div class="check-item" onclick="toggleLogClient(\''+c.id+'\',this)">'+
       '<input type="checkbox" '+(logSelectedClients.has(c.id)?'checked':'')+' onclick="event.stopPropagation();toggleLogClient(\''+c.id+'\',this.closest(\'.check-item\'))">'+
       '<span>'+c.name+'</span></div>';
   }).join('');
-  renderHistory();
 }
 
 function toggleLogClient(id,row){
@@ -513,9 +568,7 @@ function saveLog(){
   if(!clients.length){alert('בחר לפחות לקוח אחד');return;}
   data.logs=data.logs.filter(function(l){return l.date!==date;});
   data.logs.push({date:date,shirtId:shirtId,clients:clients});
-  save();
-  logSelectedClients.clear();
-  renderLog();
+  save();logSelectedClients.clear();renderLog();
 }
 
 function renderHistory(){
@@ -525,36 +578,80 @@ function renderHistory(){
   el.innerHTML=sorted.map(function(l){
     var shirt=data.shirts.find(function(s){return s.id===l.shirtId;});
     var clients=l.clients.map(function(id){var c=data.clients.find(function(x){return x.id===id;});return c?c.name:'';}).filter(Boolean).join(', ');
-    var d=new Date(l.date);
-    var ds=d.getDate()+'/'+(d.getMonth()+1)+'/'+d.getFullYear();
+    var d=new Date(l.date);var ds=d.getDate()+'/'+(d.getMonth()+1)+'/'+d.getFullYear();
     return '<div style="display:flex;justify-content:space-between;align-items:flex-start;padding:10px 0;border-bottom:0.5px solid var(--color-border-tertiary,rgba(0,0,0,0.1))">'+
       '<div><div style="font-weight:500">'+(shirt?shirt.name:'?')+'</div><div class="muted">'+clients+'</div></div>'+
       '<div class="muted">'+ds+'</div></div>';
   }).join('');
 }
 
+/* ---- RETRO ---- */
+function renderRetro(){
+  var yesterday=new Date();yesterday.setDate(yesterday.getDate()-1);
+  document.getElementById('retro-date').value=yesterday.toISOString().split('T')[0];
+  var sel=document.getElementById('retro-shirt');
+  sel.innerHTML='<option value="">-- בחר חולצה --</option>'+
+    data.shirts.map(function(s){return '<option value="'+s.id+'">'+s.name+' ('+typeLabel(s.type)+')</option>';}).join('');
+  retroSelectedClients.clear();
+  renderRetroClients();
+  document.getElementById('retro-msg').innerHTML='';
+}
+
+function renderRetroClients(){
+  var q=(document.getElementById('retro-client-search')||{}).value||'';
+  q=q.trim();
+  var el=document.getElementById('retro-client-checklist');
+  var list=q?data.clients.filter(function(c){return c.name.includes(q);}):data.clients;
+  el.innerHTML=list.map(function(c){
+    return '<div class="check-item" onclick="toggleRetroClient(\''+c.id+'\',this)">'+
+      '<input type="checkbox" '+(retroSelectedClients.has(c.id)?'checked':'')+' onclick="event.stopPropagation();toggleRetroClient(\''+c.id+'\',this.closest(\'.check-item\'))">'+
+      '<span>'+c.name+'</span></div>';
+  }).join('');
+}
+
+function toggleRetroClient(id,row){
+  var cb=row.querySelector('input[type=checkbox]');
+  if(retroSelectedClients.has(id)){retroSelectedClients.delete(id);if(cb)cb.checked=false;}
+  else{retroSelectedClients.add(id);if(cb)cb.checked=true;}
+}
+
+function saveRetro(){
+  var date=document.getElementById('retro-date').value;
+  var shirtId=document.getElementById('retro-shirt').value;
+  var clients=[...retroSelectedClients];
+  if(!date||!shirtId){alert('בחר תאריך וחולצה');return;}
+  if(!clients.length){alert('בחר לפחות לקוח אחד');return;}
+  var today=new Date().toISOString().split('T')[0];
+  if(date>=today){alert('זה תיעוד בדיעבד — בחר תאריך בעבר');return;}
+  var exists=data.logs.find(function(l){return l.date===date;});
+  if(exists&&!confirm('כבר קיימת רשומה ל-'+formatDate(date)+'. לדרוס?'))return;
+  data.logs=data.logs.filter(function(l){return l.date!==date;});
+  data.logs.push({date:date,shirtId:shirtId,clients:clients});
+  save();
+  var shirt=data.shirts.find(function(s){return s.id===shirtId;});
+  var clientNames=clients.map(function(id){var c=data.clients.find(function(x){return x.id===id;});return c?c.name:'';}).filter(Boolean).join(', ');
+  document.getElementById('retro-msg').innerHTML='<div class="success-msg">נשמר! '+formatDate(date)+' — '+(shirt?shirt.name:'')+'<br><span class="muted">'+clientNames+'</span></div>';
+  retroSelectedClients.clear();
+  renderRetroClients();
+}
+
+/* ---- REPORT ---- */
 function getReportLogs(){
   var cutoff=Date.now()-90*24*60*60*1000;
-  return [...data.logs].filter(function(l){return new Date(l.date).getTime()>=cutoff;})
-    .sort(function(a,b){return b.date.localeCompare(a.date);});
+  return [...data.logs].filter(function(l){return new Date(l.date).getTime()>=cutoff;}).sort(function(a,b){return b.date.localeCompare(a.date);});
 }
 
 function renderReport(){
   var logs=getReportLogs();
   var el=document.getElementById('report-list');
   if(!logs.length){el.innerHTML='<div class="empty">אין נתונים ב-3 החודשים האחרונים</div>';return;}
-  el.innerHTML='<table><thead><tr>'+
-    '<th>תאריך</th><th>יום</th><th>חולצה</th><th>לקוחות</th>'+
-    '</tr></thead><tbody>'+
+  el.innerHTML='<table><thead><tr><th>תאריך</th><th>יום</th><th>חולצה</th><th>לקוחות</th></tr></thead><tbody>'+
     logs.map(function(l){
-      var d=new Date(l.date);
-      var ds=d.getDate()+'/'+(d.getMonth()+1)+'/'+d.getFullYear();
+      var d=new Date(l.date);var ds=d.getDate()+'/'+(d.getMonth()+1)+'/'+d.getFullYear();
       var dayName=DAYS_HE[d.getDay()];
       var shirt=data.shirts.find(function(s){return s.id===l.shirtId;});
       var clients=l.clients.map(function(id){var c=data.clients.find(function(x){return x.id===id;});return c?c.name:'';}).filter(Boolean).join(', ');
-      return '<tr><td>'+ds+'</td><td style="color:var(--color-text-secondary)">'+dayName+'</td>'+
-        '<td style="font-weight:500">'+(shirt?shirt.name:'?')+'</td>'+
-        '<td style="color:var(--color-text-secondary)">'+clients+'</td></tr>';
+      return '<tr><td>'+ds+'</td><td style="color:var(--color-text-secondary)">'+dayName+'</td><td style="font-weight:500">'+(shirt?shirt.name:'?')+'</td><td style="color:var(--color-text-secondary)">'+clients+'</td></tr>';
     }).join('')+'</tbody></table>';
 }
 
@@ -562,8 +659,7 @@ function downloadReport(){
   var logs=getReportLogs();
   var rows=[['תאריך','יום','חולצה','לקוחות']];
   logs.forEach(function(l){
-    var d=new Date(l.date);
-    var ds=d.getDate()+'/'+(d.getMonth()+1)+'/'+d.getFullYear();
+    var d=new Date(l.date);var ds=d.getDate()+'/'+(d.getMonth()+1)+'/'+d.getFullYear();
     var shirt=data.shirts.find(function(s){return s.id===l.shirtId;});
     var clients=l.clients.map(function(id){var c=data.clients.find(function(x){return x.id===id;});return c?c.name:'';}).filter(Boolean).join(' | ');
     rows.push([ds,DAYS_HE[d.getDay()],shirt?shirt.name:'?',clients]);
@@ -575,6 +671,7 @@ function downloadReport(){
   a.click();
 }
 
+/* ---- SHIRTS ---- */
 function renderShirts(){
   var el=document.getElementById('shirts-list');
   if(!data.shirts.length){el.innerHTML='<div class="empty">אין חולצות עדיין</div>';return;}
@@ -609,27 +706,18 @@ function renderShirts(){
 function startShirtEdit(id){document.getElementById('sv-'+id).style.display='none';document.getElementById('se-'+id).style.display='block';}
 function cancelShirtEdit(id){document.getElementById('sv-'+id).style.display='flex';document.getElementById('se-'+id).style.display='none';}
 function saveShirtEdit(id){
-  var s=data.shirts.find(function(x){return x.id===id;});
-  if(!s) return;
-  var v=document.getElementById('si-'+id).value.trim();
-  if(v) s.name=v;
-  s.type=document.getElementById('st-'+id).value;
-  save();renderShirts();
+  var s=data.shirts.find(function(x){return x.id===id;});if(!s)return;
+  var v=document.getElementById('si-'+id).value.trim();if(v)s.name=v;
+  s.type=document.getElementById('st-'+id).value;save();renderShirts();
 }
-function toggleFav(id){
-  var s=data.shirts.find(function(x){return x.id===id;});
-  if(s){s.fav=!s.fav;save();renderShirts();}
-}
+function toggleFav(id){var s=data.shirts.find(function(x){return x.id===id;});if(s){s.fav=!s.fav;save();renderShirts();}}
 function addShirt(){
   var name=document.getElementById('shirt-name').value.trim();
   var type=document.getElementById('shirt-type').value;
   var fav=document.getElementById('shirt-fav').checked;
-  if(!name) return;
+  if(!name)return;
   data.shirts.push({id:'s'+Date.now(),name:name,type:type,fav:fav});
-  save();
-  document.getElementById('shirt-name').value='';
-  document.getElementById('shirt-fav').checked=false;
-  renderShirts();
+  save();document.getElementById('shirt-name').value='';document.getElementById('shirt-fav').checked=false;renderShirts();
 }
 function deleteShirt(id){
   data.shirts=data.shirts.filter(function(s){return s.id!==id;});
@@ -637,10 +725,36 @@ function deleteShirt(id){
   save();renderShirts();
 }
 
+/* ---- CLIENTS ---- */
+function renderMergeSelects(){
+  var opts=data.clients.map(function(c){return '<option value="'+c.id+'">'+c.name+'</option>';}).join('');
+  var p=document.getElementById('merge-primary');
+  var d=document.getElementById('merge-duplicate');
+  if(p) p.innerHTML=opts;
+  if(d) d.innerHTML=opts;
+}
+
+function mergeClients(){
+  var pid=document.getElementById('merge-primary').value;
+  var did=document.getElementById('merge-duplicate').value;
+  var warn=document.getElementById('merge-warning');
+  if(pid===did){warn.textContent='בחר שני לקוחות שונים';warn.style.display='block';return;}
+  var primary=data.clients.find(function(c){return c.id===pid;});
+  var dup=data.clients.find(function(c){return c.id===did;});
+  if(!confirm('לאחד את "'+dup.name+'" לתוך "'+primary.name+'"?\nכל ההיסטוריה של '+dup.name+' תועבר ל-'+primary.name+' ויימחק.'))return;
+  data.logs=data.logs.map(function(l){
+    return {date:l.date,shirtId:l.shirtId,clients:l.clients.map(function(cid){return cid===did?pid:cid;}).filter(function(v,i,arr){return arr.indexOf(v)===i;})};
+  });
+  data.clients=data.clients.filter(function(c){return c.id!==did;});
+  save();warn.style.display='none';renderClients();renderMergeSelects();
+  alert('בוצע! "'+dup.name+'" אוחד לתוך "'+primary.name+'".');
+}
+
 function renderClients(){
   var el=document.getElementById('clients-list');
   if(!data.clients.length){el.innerHTML='<div class="empty">אין לקוחות עדיין</div>';return;}
-  el.innerHTML=data.clients.map(function(c){
+  var sorted=[...data.clients].sort(function(a,b){return a.name.localeCompare(b.name,'he');});
+  el.innerHTML=sorted.map(function(c){
     return '<div class="client-item">'+
       '<div style="flex:1;min-width:0">'+
         '<div id="cv-'+c.id+'" style="display:flex;align-items:center;gap:6px">'+
@@ -655,7 +769,11 @@ function renderClients(){
         '</div>'+
       '</div>'+
       '<div class="row" style="flex-shrink:0">'+
-        '<button class="btn" onclick="toggleDays(\''+c.id+'\')">'+(c.days===90?'60 יום':'90 יום')+'</button>'+
+        '<select style="width:90px;margin:0" onchange="setClientDays(\''+c.id+'\',this.value,this)">'+
+          '<option value="60" '+(c.days==60?'selected':'')+'>60 יום</option>'+
+          '<option value="90" '+(c.days==90?'selected':'')+'>90 יום</option>'+
+        '</select>'+
+        '<span id="saved-'+c.id+'" class="tag saved" style="display:none">נשמר</span>'+
         '<button class="btn" onclick="startClientEdit(\''+c.id+'\')">עריכה</button>'+
         '<button class="btn danger" onclick="deleteClient(\''+c.id+'\')">מחק</button>'+
       '</div>'+
@@ -663,33 +781,36 @@ function renderClients(){
   }).join('');
 }
 
+function setClientDays(id,days,el){
+  var c=data.clients.find(function(x){return x.id===id;});
+  if(c){
+    c.days=parseInt(days);save();
+    var badge=document.getElementById('saved-'+id);
+    if(badge){badge.style.display='inline-block';setTimeout(function(){badge.style.display='none';},2000);}
+  }
+}
+
 function startClientEdit(id){document.getElementById('cv-'+id).style.display='none';document.getElementById('ce-'+id).style.display='block';}
 function cancelClientEdit(id){document.getElementById('cv-'+id).style.display='flex';document.getElementById('ce-'+id).style.display='none';}
 function saveClientEdit(id){
-  var c=data.clients.find(function(x){return x.id===id;});
-  if(!c) return;
-  var v=document.getElementById('ci-'+id).value.trim();
-  if(v) c.name=v;
+  var c=data.clients.find(function(x){return x.id===id;});if(!c)return;
+  var v=document.getElementById('ci-'+id).value.trim();if(v)c.name=v;
   save();renderClients();
 }
 function addClient(){
   var name=document.getElementById('client-name').value.trim();
   var days=parseInt(document.getElementById('client-days').value);
-  if(!name) return;
+  if(!name)return;
   data.clients.push({id:'c'+Date.now(),name:name,days:days});
-  save();
-  document.getElementById('client-name').value='';
-  renderClients();
-}
-function toggleDays(id){
-  var c=data.clients.find(function(x){return x.id===id;});
-  if(c){c.days=c.days===90?60:90;save();renderClients();}
+  save();document.getElementById('client-name').value='';renderClients();
 }
 function deleteClient(id){
   data.clients=data.clients.filter(function(c){return c.id!==id;});
   data.logs=data.logs.map(function(l){return {date:l.date,shirtId:l.shirtId,clients:l.clients.filter(function(cid){return cid!==id;})};});
   save();renderClients();
 }
+
+function formatDate(d){if(!d)return'';var p=d.split('-');return p[2]+'/'+p[1]+'/'+p[0];}
 
 renderMorning();
 </script>
